@@ -1,0 +1,8 @@
+{
+  "name": "KromaFolio",
+  "description": "Mobile-first portfolio studio for global digital creators to design Behance-style presentation slides with AI, export free PDFs, and showcase work.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,280 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Helpers ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isEmailVerified() && request.auth.token.email == 'm.asadjaved7@gmail.com';
+    }
+
+    function isValidSkillList(skills) {
+      return skills is list
+        && skills.size() <= 10
+        && (skills.size() == 0 || (skills[0] is string && skills[0].size() >= 1 && skills[0].size() <= 40));
+    }
+
+    function isValidCategory(cat) {
+      return cat in [
+        'UI/UX Design',
+        'Brand Identity',
+        '3D & Motion',
+        'Illustration',
+        'Product Design',
+        'Full-Stack Dev',
+        'Photography',
+        'Video & Film'
+      ];
+    }
+
+    function isValidCreatorProfile(data) {
+      return data.keys().hasAll([
+          'uid', 'displayName', 'handle', 'discipline', 'location',
+          'bio', 'skills', 'avatarColor', 'behanceUrl', 'dribbbleUrl',
+          'websiteUrl', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'displayName', 'handle', 'discipline', 'location',
+          'bio', 'skills', 'avatarColor', 'behanceUrl', 'dribbbleUrl',
+          'websiteUrl', 'createdAt', 'updatedAt'
+        ])
+        && data.uid is string && data.uid == request.auth.uid && isValidId(data.uid)
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80
+        && data.handle is string && data.handle.size() >= 2 && data.handle.size() <= 40 && data.handle.matches('^[a-z0-9_.\\-]+$')
+        && data.discipline is string && isValidCategory(data.discipline)
+        && data.location is string && data.location.size() <= 80
+        && data.bio is string && data.bio.size() <= 400
+        && isValidSkillList(data.skills)
+        && data.avatarColor is string && data.avatarColor.size() >= 3 && data.avatarColor.size() <= 20
+        && data.behanceUrl is string && data.behanceUrl.size() <= 240
+        && data.dribbbleUrl is string && data.dribbbleUrl.size() <= 240
+        && data.websiteUrl is string && data.websiteUrl.size() <= 240
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCreatorPrivateInfo(data) {
+      return data.keys().hasAll(['uid', 'email', 'preferredTheme', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'preferredTheme', 'updatedAt'])
+        && data.uid is string && data.uid == request.auth.uid && isValidId(data.uid)
+        && data.email is string && data.email.size() <= 160
+        && data.preferredTheme in ['light', 'dark']
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPortfolioDeck(data, portfolioId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'creatorName', 'creatorHandle', 'creatorLocation',
+          'title', 'subtitle', 'category', 'skills', 'accentColor',
+          'coverImage', 'behanceUrl', 'dribbbleUrl', 'isPublished',
+          'allowFreePdf', 'appreciationCount', 'slides', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'creatorName', 'creatorHandle', 'creatorLocation',
+          'title', 'subtitle', 'category', 'skills', 'accentColor',
+          'coverImage', 'behanceUrl', 'dribbbleUrl', 'isPublished',
+          'allowFreePdf', 'appreciationCount', 'slides', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == portfolioId && isValidId(data.id)
+        && data.ownerId is string && isValidId(data.ownerId)
+        && data.creatorName is string && data.creatorName.size() >= 1 && data.creatorName.size() <= 80
+        && data.creatorHandle is string && data.creatorHandle.size() >= 2 && data.creatorHandle.size() <= 40
+        && data.creatorLocation is string && data.creatorLocation.size() <= 80
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 120
+        && data.subtitle is string && data.subtitle.size() <= 220
+        && data.category is string && isValidCategory(data.category)
+        && isValidSkillList(data.skills)
+        && data.accentColor is string && data.accentColor.size() >= 3 && data.accentColor.size() <= 20
+        && data.coverImage is string && data.coverImage.size() <= 400
+        && data.behanceUrl is string && data.behanceUrl.size() <= 240
+        && data.dribbbleUrl is string && data.dribbbleUrl.size() <= 240
+        && data.isPublished is bool
+        && data.allowFreePdf is bool
+        && data.appreciationCount is int && data.appreciationCount >= 0
+        && data.slides is list && data.slides.size() >= 1 && data.slides.size() <= 16 && data.slides[0] is map
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAppreciation(data, portfolioId, userId) {
+      return data.keys().hasAll(['userId', 'portfolioId', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'portfolioId', 'createdAt'])
+        && data.userId is string && data.userId == request.auth.uid && data.userId == userId
+        && data.portfolioId is string && data.portfolioId == portfolioId && isValidId(data.portfolioId)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidBookmark(data, creatorId, portfolioId) {
+      return data.keys().hasAll(['portfolioId', 'ownerId', 'createdAt'])
+        && data.keys().hasOnly(['portfolioId', 'ownerId', 'createdAt'])
+        && data.ownerId is string && data.ownerId == request.auth.uid && data.ownerId == creatorId
+        && data.portfolioId is string && data.portfolioId == portfolioId && isValidId(data.portfolioId)
+        && data.createdAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    // Public creator profiles (PII isolated in /private subcollection)
+    match /creators/{creatorId} {
+      allow get: if isValidId(creatorId);
+      allow list: if resource.data.uid is string;
+      allow create: if isEmailVerified()
+        && isValidId(creatorId)
+        && isOwner(creatorId)
+        && isValidCreatorProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isEmailVerified()
+        && isValidId(creatorId)
+        && (isOwner(creatorId) || isAdmin())
+        && isValidCreatorProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'handle', 'discipline', 'location',
+          'bio', 'skills', 'avatarColor', 'behanceUrl',
+          'dribbbleUrl', 'websiteUrl', 'updatedAt'
+        ]);
+      allow delete: if isAdmin();
+
+      // Strictly isolated PII subcollection
+      match /private/{docId} {
+        allow get: if isValidId(creatorId) && docId == 'info' && (isOwner(creatorId) || isAdmin());
+        allow list: if false;
+        allow create: if isEmailVerified()
+          && isValidId(creatorId)
+          && docId == 'info'
+          && isOwner(creatorId)
+          && isValidCreatorPrivateInfo(incoming())
+          && incoming().updatedAt == request.time;
+        allow update: if isEmailVerified()
+          && isValidId(creatorId)
+          && docId == 'info'
+          && (isOwner(creatorId) || isAdmin())
+          && isValidCreatorPrivateInfo(incoming())
+          && incoming().uid == existing().uid
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'preferredTheme', 'updatedAt']);
+        allow delete: if isOwner(creatorId) || isAdmin();
+      }
+
+      // Private creator bookmarks
+      match /bookmarks/{portfolioId} {
+        allow get: if isValidId(creatorId) && isValidId(portfolioId) && isOwner(creatorId);
+        allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow create: if isEmailVerified()
+          && isValidId(creatorId)
+          && isValidId(portfolioId)
+          && isOwner(creatorId)
+          && isValidBookmark(incoming(), creatorId, portfolioId)
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/portfolios/$(portfolioId));
+        allow delete: if isEmailVerified() && isValidId(creatorId) && isValidId(portfolioId) && isOwner(creatorId);
+      }
+    }
+
+    // Portfolio decks & public Behance/Dribbble showcase submissions
+    match /portfolios/{portfolioId} {
+      allow get: if isValidId(portfolioId) && resource != null && (
+        existing().isPublished == true || (isSignedIn() && existing().ownerId == request.auth.uid) || isAdmin()
+      );
+      allow list: if resource.data.isPublished == true || (isSignedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+
+      allow create: if isEmailVerified()
+        && isValidId(portfolioId)
+        && isValidPortfolioDeck(incoming(), portfolioId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().appreciationCount == 0
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isEmailVerified()
+        && isValidId(portfolioId)
+        && isValidPortfolioDeck(incoming(), portfolioId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isOwner(existing().ownerId)
+            && incoming().appreciationCount == existing().appreciationCount
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'creatorName', 'creatorHandle', 'creatorLocation', 'title',
+              'subtitle', 'category', 'skills', 'accentColor', 'coverImage',
+              'behanceUrl', 'dribbbleUrl', 'isPublished', 'allowFreePdf',
+              'slides', 'updatedAt'
+            ])
+          )
+          || (
+            existing().isPublished == true
+            && incoming().diff(existing()).affectedKeys().hasOnly(['appreciationCount', 'updatedAt'])
+            && incoming().appreciationCount == existing().appreciationCount + 1
+            && !exists(/databases/$(database)/documents/portfolios/$(portfolioId)/appreciations/$(request.auth.uid))
+            && existsAfter(/databases/$(database)/documents/portfolios/$(portfolioId)/appreciations/$(request.auth.uid))
+          )
+          || (
+            existing().isPublished == true
+            && incoming().diff(existing()).affectedKeys().hasOnly(['appreciationCount', 'updatedAt'])
+            && incoming().appreciationCount == existing().appreciationCount - 1
+            && incoming().appreciationCount >= 0
+            && exists(/databases/$(database)/documents/portfolios/$(portfolioId)/appreciations/$(request.auth.uid))
+            && !existsAfter(/databases/$(database)/documents/portfolios/$(portfolioId)/appreciations/$(request.auth.uid))
+          )
+        );
+
+      allow delete: if isEmailVerified() && isValidId(portfolioId) && resource != null && (isOwner(existing().ownerId) || isAdmin());
+
+      // Atomic appreciation records
+      match /appreciations/{userId} {
+        allow get: if isValidId(portfolioId) && isValidId(userId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+        allow create: if isEmailVerified()
+          && isValidId(portfolioId)
+          && isValidId(userId)
+          && isOwner(userId)
+          && isValidAppreciation(incoming(), portfolioId, userId)
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/portfolios/$(portfolioId))
+          && get(/databases/$(database)/documents/portfolios/$(portfolioId)).data.isPublished == true
+          && getAfter(/databases/$(database)/documents/portfolios/$(portfolioId)).data.appreciationCount
+             == get(/databases/$(database)/documents/portfolios/$(portfolioId)).data.appreciationCount + 1;
+        allow delete: if isEmailVerified()
+          && isValidId(portfolioId)
+          && isValidId(userId)
+          && isOwner(userId)
+          && exists(/databases/$(database)/documents/portfolios/$(portfolioId))
+          && getAfter(/databases/$(database)/documents/portfolios/$(portfolioId)).data.appreciationCount
+             == get(/databases/$(database)/documents/portfolios/$(portfolioId)).data.appreciationCount - 1;
+      }
+    }
+  }
+}

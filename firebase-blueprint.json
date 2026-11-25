@@ -1,0 +1,297 @@
+{
+  "entities": {
+    "CreatorProfile": {
+      "title": "CreatorProfile",
+      "description": "Public creator profile displayed alongside portfolios and showcase submissions.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "handle": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40,
+          "pattern": "^[a-z0-9_.\\-]+$"
+        },
+        "discipline": {
+          "type": "string",
+          "enum": [
+            "UI/UX Design",
+            "Brand Identity",
+            "3D & Motion",
+            "Illustration",
+            "Product Design",
+            "Full-Stack Dev",
+            "Photography",
+            "Video & Film"
+          ]
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "skills": {
+          "type": "array",
+          "description": "Bounded list of up to 10 creator skills."
+        },
+        "avatarColor": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "behanceUrl": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "dribbbleUrl": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "websiteUrl": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "handle",
+        "discipline",
+        "location",
+        "bio",
+        "skills",
+        "avatarColor",
+        "behanceUrl",
+        "dribbbleUrl",
+        "websiteUrl",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CreatorPrivateInfo": {
+      "title": "CreatorPrivateInfo",
+      "description": "Isolated PII document for creator email and UI preferences.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "preferredTheme": {
+          "type": "string",
+          "enum": ["light", "dark"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "preferredTheme", "updatedAt"]
+    },
+    "PortfolioDeck": {
+      "title": "PortfolioDeck",
+      "description": "Behance-style multi-slide portfolio presentation deck that can be exported to PDF and submitted to the public Showcase.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "creatorName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "creatorHandle": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "creatorLocation": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 220
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "UI/UX Design",
+            "Brand Identity",
+            "3D & Motion",
+            "Illustration",
+            "Product Design",
+            "Full-Stack Dev",
+            "Photography",
+            "Video & Film"
+          ]
+        },
+        "skills": {
+          "type": "array",
+          "description": "Bounded list of up to 10 skills."
+        },
+        "accentColor": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "coverImage": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "behanceUrl": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "dribbbleUrl": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "isPublished": {
+          "type": "boolean"
+        },
+        "allowFreePdf": {
+          "type": "boolean"
+        },
+        "appreciationCount": {
+          "type": "integer"
+        },
+        "slides": {
+          "type": "array",
+          "description": "1 to 16 structured Behance-style presentation slide objects."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "creatorName",
+        "creatorHandle",
+        "creatorLocation",
+        "title",
+        "subtitle",
+        "category",
+        "skills",
+        "accentColor",
+        "coverImage",
+        "behanceUrl",
+        "dribbbleUrl",
+        "isPublished",
+        "allowFreePdf",
+        "appreciationCount",
+        "slides",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PortfolioAppreciation": {
+      "title": "PortfolioAppreciation",
+      "description": "Atomic appreciation record linking a verified user to a published portfolio.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "portfolioId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "portfolioId", "createdAt"]
+    },
+    "CreatorBookmark": {
+      "title": "CreatorBookmark",
+      "description": "Private bookmark saved by a creator for inspiration.",
+      "type": "object",
+      "properties": {
+        "portfolioId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["portfolioId", "ownerId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/creators/{creatorId}": {
+      "schema": { "$ref": "#/entities/CreatorProfile" },
+      "description": "Public creator profiles indexed by Firebase Auth UID."
+    },
+    "/creators/{creatorId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/CreatorPrivateInfo" },
+      "description": "Private PII document (email, theme preference) strictly isolated to the owner."
+    },
+    "/creators/{creatorId}/bookmarks/{portfolioId}": {
+      "schema": { "$ref": "#/entities/CreatorBookmark" },
+      "description": "Private creator bookmarks of showcase portfolios."
+    },
+    "/portfolios/{portfolioId}": {
+      "schema": { "$ref": "#/entities/PortfolioDeck" },
+      "description": "Portfolio slide decks created by designers and optionally published to the global Showcase."
+    },
+    "/portfolios/{portfolioId}/appreciations/{userId}": {
+      "schema": { "$ref": "#/entities/PortfolioAppreciation" },
+      "description": "Atomic appreciation records synchronized with PortfolioDeck.appreciationCount."
+    }
+  }
+}
